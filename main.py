@@ -178,7 +178,7 @@ if __name__ == '__main__':
         else:
             logger.info("Using Local LLM as global LLM.")
             set_global_llm(lang=args.language)
-    ##### skip arxiv with no papers
+    # skip arxiv with no papers
     valid_papers = [p for p in papers if p.pdf_url is not None]
     html = render_email(valid_papers)
     logger.info("Sending email...")
