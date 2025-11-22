@@ -16,25 +16,25 @@ from paper import ArxivPaper
 from llm import set_global_llm
 import feedparser
 ##### new import #####
-import datatime
-from typing import List
+# import datatime
+# from typing import List
 
 
-def get_zotero_corpus(id:str,key:str) -> list[dict]:
-    zot = zotero.Zotero(id, 'user', key)
-    collections = zot.everything(zot.collections())
-    collections = {c['key']:c for c in collections}
-    corpus = zot.everything(zot.items(itemType='conferencePaper || journalArticle || preprint'))
-    corpus = [c for c in corpus if c['data']['abstractNote'] != '']
-    def get_collection_path(col_key:str) -> str:
-        if p := collections[col_key]['data']['parentCollection']:
-            return get_collection_path(p) + '/' + collections[col_key]['data']['name']
-        else:
-            return collections[col_key]['data']['name']
-    for c in corpus:
-        paths = [get_collection_path(col) for col in c['data']['collections']]
-        c['paths'] = paths
-    return corpus
+# def get_zotero_corpus(id:str,key:str) -> list[dict]:
+#     zot = zotero.Zotero(id, 'user', key)
+#     collections = zot.everything(zot.collections())
+#     collections = {c['key']:c for c in collections}
+#     corpus = zot.everything(zot.items(itemType='conferencePaper || journalArticle || preprint'))
+#     corpus = [c for c in corpus if c['data']['abstractNote'] != '']
+#     def get_collection_path(col_key:str) -> str:
+#         if p := collections[col_key]['data']['parentCollection']:
+#             return get_collection_path(p) + '/' + collections[col_key]['data']['name']
+#         else:
+#             return collections[col_key]['data']['name']
+#     for c in corpus:
+#         paths = [get_collection_path(col) for col in c['data']['collections']]
+#         c['paths'] = paths
+#     return corpus
 
 def filter_corpus(corpus:list[dict], pattern:str) -> list[dict]:
     _,filename = mkstemp()
@@ -48,70 +48,70 @@ def filter_corpus(corpus:list[dict], pattern:str) -> list[dict]:
             new_corpus.append(c)
     os.remove(filename)
     return new_corpus
-def from_feed_entry(entry) -> 'ArxivPaper':
-    """
-    将 feedparser.Entry 转换为 ArxivPaper。
-    假设 ArxivPaper 支持 arxiv.Entry-like 对象或 dict 初始化。
-    """
-    # 提取 arXiv ID
-    arxiv_id = entry.id.removeprefix("oai:arXiv.org:")
+# def from_feed_entry(entry) -> 'ArxivPaper':
+#     """
+#     将 feedparser.Entry 转换为 ArxivPaper。
+#     假设 ArxivPaper 支持 arxiv.Entry-like 对象或 dict 初始化。
+#     """
+#     # 提取 arXiv ID
+#     arxiv_id = entry.id.removeprefix("oai:arXiv.org:")
     
-    # 链接：找 PDF URL（arXiv feed 中的 links 有 pdf）
-    pdf_url = None
-    for link in entry.links:
-        if 'pdf' in link.get('title', '').lower() or '/pdf/' in link.href:
-            pdf_url = link.href
-            break
-    if not pdf_url:
-        pdf_url = f"https://arxiv.org/pdf/{arxiv_id}.pdf"  # fallback
+#     # 链接：找 PDF URL（arXiv feed 中的 links 有 pdf）
+#     pdf_url = None
+#     for link in entry.links:
+#         if 'pdf' in link.get('title', '').lower() or '/pdf/' in link.href:
+#             pdf_url = link.href
+#             break
+#     if not pdf_url:
+#         pdf_url = f"https://arxiv.org/pdf/{arxiv_id}.pdf"  # fallback
     
-    # 作者：feed.authors 是列表 of dicts {'name': '...'}
-    authors = [author.get('name', '') for author in entry.get('authors', [])]
+#     # 作者：feed.authors 是列表 of dicts {'name': '...'}
+#     authors = [author.get('name', '') for author in entry.get('authors', [])]
     
-    # 日期：解析 published 为 datetime
-    published = datetime.datetime.strptime(entry.published[:19], '%Y-%m-%dT%H:%M:%S') if entry.published else None
+#     # 日期：解析 published 为 datetime
+#     published = datetime.datetime.strptime(entry.published[:19], '%Y-%m-%dT%H:%M:%S') if entry.published else None
     
-    # 创建 mock arxiv.Entry-like dict（如果 ArxivPaper 需要）
-    mock_entry = {
-        'id': arxiv_id,
-        'title': entry.title,
-        'authors': authors,
-        'summary': entry.summary,
-        'pdf_url': pdf_url,
-        'published': published,
-        'primary_category': entry.get('arxiv_primary_category', ''),
-        # 其他字段如 journal 等可添加
-    }
+#     # 创建 mock arxiv.Entry-like dict（如果 ArxivPaper 需要）
+#     mock_entry = {
+#         'id': arxiv_id,
+#         'title': entry.title,
+#         'authors': authors,
+#         'summary': entry.summary,
+#         'pdf_url': pdf_url,
+#         'published': published,
+#         'primary_category': entry.get('arxiv_primary_category', ''),
+#         # 其他字段如 journal 等可添加
+#     }
     
-    # 假设 ArxivPaper(mock_entry) 或 ArxivPaper(arxiv.Result(mock_entry))；根据你的实现调整
-    return ArxivPaper(mock_entry)  # 或直接 ArxivPaper(entry) 如果兼容
+#     # 假设 ArxivPaper(mock_entry) 或 ArxivPaper(arxiv.Result(mock_entry))；根据你的实现调整
+#     return ArxivPaper(mock_entry)  # 或直接 ArxivPaper(entry) 如果兼容
 
-# def get_arxiv_paper(query:str, debug:bool=False) -> list[ArxivPaper]:
-#     client = arxiv.Client(num_retries=10,delay_seconds=10)
-#     feed = feedparser.parse(f"https://rss.arxiv.org/atom/{query}")
-#     if 'Feed error for query' in feed.feed.title:
-#         raise Exception(f"Invalid ARXIV_QUERY: {query}.")
-#     if not debug:
-#         papers = []
-#         all_paper_ids = [i.id.removeprefix("oai:arXiv.org:") for i in feed.entries if i.arxiv_announce_type == 'new']
-#         bar = tqdm(total=len(all_paper_ids),desc="Retrieving Arxiv papers")
-#         for i in range(0,len(all_paper_ids),50):
-#             search = arxiv.Search(id_list=all_paper_ids[i:i+50])
-#             batch = [ArxivPaper(p) for p in client.results(search)]
-#             bar.update(len(batch))
-#             papers.extend(batch)
-#         bar.close()
+# # def get_arxiv_paper(query:str, debug:bool=False) -> list[ArxivPaper]:
+# #     client = arxiv.Client(num_retries=10,delay_seconds=10)
+# #     feed = feedparser.parse(f"https://rss.arxiv.org/atom/{query}")
+# #     if 'Feed error for query' in feed.feed.title:
+# #         raise Exception(f"Invalid ARXIV_QUERY: {query}.")
+# #     if not debug:
+# #         papers = []
+# #         all_paper_ids = [i.id.removeprefix("oai:arXiv.org:") for i in feed.entries if i.arxiv_announce_type == 'new']
+# #         bar = tqdm(total=len(all_paper_ids),desc="Retrieving Arxiv papers")
+# #         for i in range(0,len(all_paper_ids),50):
+# #             search = arxiv.Search(id_list=all_paper_ids[i:i+50])
+# #             batch = [ArxivPaper(p) for p in client.results(search)]
+# #             bar.update(len(batch))
+# #             papers.extend(batch)
+# #         bar.close()
 
-#     else:
-#         logger.debug("Retrieve 5 arxiv papers regardless of the date.")
-#         search = arxiv.Search(query='cat:cs.AI', sort_by=arxiv.SortCriterion.SubmittedDate)
-#         papers = []
-#         for i in client.results(search):
-#             papers.append(ArxivPaper(i))
-#             if len(papers) == 5:
-#                 break
+# #     else:
+# #         logger.debug("Retrieve 5 arxiv papers regardless of the date.")
+# #         search = arxiv.Search(query='cat:cs.AI', sort_by=arxiv.SortCriterion.SubmittedDate)
+# #         papers = []
+# #         for i in client.results(search):
+# #             papers.append(ArxivPaper(i))
+# #             if len(papers) == 5:
+# #                 break
 
-#     return papers
+# #     return papers
 def get_arxiv_paper(query: str, debug: bool = False) -> List['ArxivPaper']:
     client = arxiv.Client(num_retries=10, delay_seconds=10)  # 保留，但不一定用
     
