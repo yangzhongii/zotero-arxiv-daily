@@ -37,5 +37,5 @@ jobs:
           MODEL_NAME: ${{ secrets.MODEL_NAME }}
           LANGUAGE: ${{ vars.LANGUAGE }}
         run: |
-          # uv run test.py --debug
-          uv run test.py --debug --zotero_include 'mimic'
+          uv run main.py --debug
+          # uv run test.py --debug --zotero_include 'mimic'
